@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ПВЗ — Пункт выдачи заказов</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+
+  <!-- ===================== ЭКРАН АВТОРИЗАЦИИ ===================== -->
+  <div id="auth-screen" class="screen active">
+    <div class="auth-wrapper">
+      <div class="auth-logo">
+        <i class="fa-solid fa-box-open"></i>
+        <span>ПВЗ</span>
+      </div>
+
+      <!-- Вкладки: Вход / Регистрация -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login-btn" onclick="switchAuthTab('login')">
+          <i class="fa-solid fa-right-to-bracket"></i> Вход
+        </button>
+        <button class="auth-tab" id="tab-register-btn" onclick="switchAuthTab('register')">
+          <i class="fa-solid fa-user-plus"></i> Регистрация
+        </button>
+      </div>
+
+      <!-- ---- ФОРМА ВХОДА ---- -->
+      <div id="auth-panel-login">
+        <h2 class="auth-title">Вход в личный кабинет</h2>
+        <p class="auth-subtitle">Введите данные для доступа к системе</p>
+
+        <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label for="username"><i class="fa-solid fa-user"></i> Логин</label>
+            <input
+              type="text"
+              id="username"
+              placeholder="Введите логин"
+              autocomplete="username"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password"><i class="fa-solid fa-lock"></i> Пароль</label>
+            <div class="password-wrapper">
+              <input
+                type="password"
+                id="password"
+                placeholder="Введите пароль"
+                autocomplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                class="toggle-password"
+                onclick="togglePassword()"
+                title="Показать / скрыть пароль"
+              >
+                <i class="fa-solid fa-eye" id="eye-icon"></i>
+              </button>
+            </div>
+          </div>
+
+          <div id="auth-error" class="auth-error hidden">
+            <i class="fa-solid fa-circle-exclamation"></i> Неверный логин или пароль
+          </div>
+
+          <button type="submit" class="btn-primary btn-full">
+            <i class="fa-solid fa-right-to-bracket"></i> Войти
+          </button>
+
+          <p class="auth-hint">
+            Демо-доступ: логин <strong>admin</strong>, пароль <strong>1234</strong>
+          </p>
+        </form>
+      </div>
+
+      <!-- ---- ФОРМА РЕГИСТРАЦИИ ---- -->
+      <div id="auth-panel-register" style="display:none;">
+        <h2 class="auth-title">Создание аккаунта</h2>
+        <p class="auth-subtitle">Заполните данные для регистрации</p>
+
+        <form id="register-form" class="auth-form" onsubmit="handleRegister(event)">
+          <div class="form-group">
+            <label for="reg-username"><i class="fa-solid fa-envelope"></i> Email</label>
+            <input
+              type="email"
+              id="reg-username"
+              placeholder="example@mail.ru"
+              autocomplete="email"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="reg-password"><i class="fa-solid fa-lock"></i> Пароль</label>
+            <div class="password-wrapper">
+              <input
+                type="password"
+                id="reg-password"
+                placeholder="Придумайте пароль"
+                autocomplete="new-password"
+                required
+              />
+              <button
+                type="button"
+                class="toggle-password"
+                onclick="togglePassField('reg-password', 'eye-reg')"
+                title="Показать / скрыть пароль"
+              >
+                <i class="fa-solid fa-eye" id="eye-reg"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="reg-password-confirm"><i class="fa-solid fa-shield-halved"></i> Повторите пароль</label>
+            <div class="password-wrapper">
+              <input
+                type="password"
+                id="reg-password-confirm"
+                placeholder="Повторите пароль"
+                autocomplete="new-password"
+                required
+              />
+              <button
+                type="button"
+                class="toggle-password"
+                onclick="togglePassField('reg-password-confirm', 'eye-reg-conf')"
+                title="Показать / скрыть пароль"
+              >
+                <i class="fa-solid fa-eye" id="eye-reg-conf"></i>
+              </button>
+            </div>
+          </div>
+
+          <div id="reg-error" class="auth-error hidden">
+            <i class="fa-solid fa-circle-exclamation"></i> <span id="reg-error-text">Ошибка регистрации</span>
+          </div>
+
+          <button type="submit" class="btn-primary btn-full">
+            <i class="fa-solid fa-user-plus"></i> Зарегистрироваться
+          </button>
+
+          <p class="auth-hint">
+            Уже есть аккаунт?
+            <a href="#" onclick="switchAuthTab('login')" class="auth-link">Войти</a>
+          </p>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================== ОСНОВНОЕ ПРИЛОЖЕНИЕ ===================== -->
+  <div id="app-screen" class="screen">
+
+    <!-- ---- ШАПКА ---- -->
+    <header class="site-header">
+      <div class="header-left">
+        <button class="burger-btn" onclick="toggleSidebar()" title="Меню">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-logo">
+          <span>ПВЗ</span>
+        </div>
+      </div>
+
+      <nav class="header-nav">
+        <button class="nav-btn active" onclick="showTab('home')" id="nav-home">
+          <i class="fa-solid fa-house"></i> Главная
+        </button>
+        <button class="nav-btn" onclick="showTab('orders')" id="nav-orders">
+          <i class="fa-solid fa-box"></i> Мои заказы
+        </button>
+        <button class="nav-btn" onclick="showTab('profile')" id="nav-profile">
+          <i class="fa-solid fa-user-circle"></i> Личный кабинет
+        </button>
+      </nav>
+
+      <div class="header-right">
+        <span class="user-badge">
+          <i class="fa-solid fa-circle-user"></i>
+          <span id="header-username">admin</span>
+        </span>
+      </div>
+    </header>
+
+    <!-- ---- БОКОВОЕ МЕНЮ ---- -->
+    <aside class="sidebar" id="sidebar">
+      <ul class="sidebar-menu">
+        <li>
+          <a href="#" onclick="showTab('home'); closeSidebar()">
+            <i class="fa-solid fa-house"></i> Главная
+          </a>
+        </li>
+        <li>
+          <a href="#" onclick="showTab('orders'); closeSidebar()">
+            <i class="fa-solid fa-box"></i> Мои заказы
+          </a>
+        </li>
+        <li>
+          <a href="#" onclick="showTab('profile'); closeSidebar()">
+            <i class="fa-solid fa-user-circle"></i> Личный кабинет
+          </a>
+        </li>
+        <li class="sidebar-divider"></li>
+        <li>
+          <a href="#" onclick="logout()">
+            <i class="fa-solid fa-right-from-bracket"></i> Выйти
+          </a>
+        </li>
+      </ul>
+    </aside>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+
+
+    <!-- ===================== ВКЛАДКА: ГЛАВНАЯ ===================== -->
+    <main id="tab-home" class="tab-content active">
+
+      <!-- Баннер -->
+      <section class="hero-banner">
+        <div class="hero-text">
+          <h1>Добро пожаловать в ПВЗ</h1>
+          <p>Быстрая и удобная выдача ваших заказов. Отслеживайте статус и получайте уведомления.</p>
+        </div>
+        <div class="hero-icon">
+          <i class="fa-solid fa-truck-fast"></i>
+        </div>
+      </section>
+
+      <!-- Строка поиска -->
+      <section class="search-section">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input
+            type="text"
+            autocomplete="off"
+            id="search-input"
+            placeholder="Поиск товара по названию или артикулу..."
+            oninput="handleSearch(this.value)"
+          />
+          <button class="btn-clear-search" onclick="clearSearch()" id="clear-search-btn" style="display:none;">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div id="search-suggestions" class="search-suggestions"></div>
+        <div id="search-results" class="search-results hidden"></div>
+      </section>
+
+      <!-- Каталог товаров -->
+      <section class="catalog-section">
+        <h2 class="section-title">
+          <i class="fa-solid fa-store"></i> Ассортимент магазина
+        </h2>
+
+        <div class="catalog-filters">
+          <button class="filter-btn active" onclick="filterCatalog('all', this)">Все</button>
+          <button class="filter-btn" onclick="filterCatalog('electronics', this)">Электроника</button>
+          <button class="filter-btn" onclick="filterCatalog('clothes', this)">Одежда</button>
+          <button class="filter-btn" onclick="filterCatalog('home', this)">Дом и быт</button>
+          <button class="filter-btn" onclick="filterCatalog('sport', this)">Спорт</button>
+        </div>
+
+        <div class="catalog-grid" id="catalog-grid">
+
+          <!-- Товар 1 -->
+          <div class="product-card" data-category="electronics" data-name="Смартфон TechPro X12" data-article="EL-001">
+            <div class="product-img-wrap">
+              <div class="product-img-placeholder">
+                <i class="fa-solid fa-mobile-screen-button"></i>
+              </div>
+              <span class="product-badge">Новинка</span>
+            </div>
+            <div class="product-info">
+              <span class="product-category">Электроника</span>
+              <h3 class="product-name">Смартфон TechPro X12</h3>
+              <p class="product-desc">6.7" AMOLED, 256 ГБ, 5G, камера 108 Мп. Мощный процессор и долгая батарея для активного использования.</p>
+              <div class="product-article">Арт.: EL-001</div>
+              <div class="product-footer">
+                <span class="product-price">45 990 ₽</span>
+                <button class="btn-order" onclick="addToCart(this, 'Смартфон TechPro X12')">
+                  <i class="fa-solid fa-cart-plus"></i> Заказать
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Товар 2 -->
+          <div class="product-card" data-category="electronics" data-name="Ноутбук UltraBook Pro 15" data-article="EL-002">
+            <div class="product-img-wrap">
+              <div class="product-img-placeholder">
+                <i class="fa-solid fa-laptop"></i>
+              </div>
+            </div>
+            <div class="product-info">
+              <span class="product-category">Электроника</span>
+              <h3 class="product-name">Ноутбук UltraBook Pro 15</h3>
+              <p class="product-desc">15.6" IPS, Core i7, 16 ГБ RAM, SSD 512 ГБ. Идеален для работы и учёбы, лёгкий корпус из алюминия.</p>
+              <div class="product-article">Арт.: EL-002</div>
+              <div class="product-footer">
+                <span class="product-price">89 990 ₽</span>
+                <button class="btn-order" onclick="addToCart(this, 'Ноутбук UltraBook Pro 15')">
+                  <i class="fa-solid fa-cart-plus"></i> Заказать
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Товар 3 -->
+          <div class="product-card" data-category="electronics" data-name="Беспроводные наушники SoundMax 500" data-article="EL-003">
+            <div class="product-img-wrap">
+              <div class="product-img-placeholder">
+                <i class="fa-solid fa-headphones"></i>
+              </div>
+              <span class="product-badge badge-sale">Скидка</span>
+            </div>
+            <div class="product-info">
+              <span class="product-category">Электроника</span>
+              <h3 class="product-name">Наушники SoundMax 500</h3>
+              <p class="product-desc">Активное шумоподавление, 30 часов работы, Bluetooth 5.3. Премиальный звук и комфортная посадка.</p>
+              <div class="product-article">Арт.: EL-003</div>
+              <div class="product-footer">
+                <span class="product-price">7 490 ₽</span>
+                <button class="btn-order" onclick="addToCart(this, 'Наушники SoundMax 500')">
+                  <i class="fa-solid fa-cart-plus"></i> Заказать
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Товар 4 -->
+          <div class="product-card" data-category="clothes" data-name="Куртка зимняя NordStyle" data-article="CL-001">
+            <div class="product-img-wrap">
+              <div class="product-img-placeholder">
+                <i class="fa-solid fa-shirt"></i>
+              </div>
+            </div>
+            <div class="product-info">
+              <span class="product-category">Одежда</span>
+              <h3 class="product-name">Куртка зимняя NordStyle</h3>
+              <p class="product-desc">Утеплитель 300 г/м², водоотталкивающая пропитка, размеры S–3XL. Стильная и тёплая для холодного сезона.</p>
+              <div class="product-article">Арт.: CL-001</div>
+              <div class="product-footer">
+                <span class="product-price">12 490 ₽</span>
+                <button class="btn-order" onclick="addToCart(this, 'Куртка зимняя NordStyle')">
+                  <i class="fa-solid fa-cart-plus"></i> Заказать
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Товар 5 -->
+          <div class="product-card" data-category="clothes" data-name="Кроссовки RunFlex Air" data-article="CL-002">
+            <div class="product-img-wrap">
+              <div class="product-img-placeholder">
+                <i class="fa-solid fa-shoe-prints"></i>
+              </div>
+              <span class="product-badge">Хит</span>
+            </div>
+            <div class="product-info">
+              <span class="product-category">Одежда</span>
+              <h3 class="product-name">Кроссовки RunFlex Air</h3>
+              <p class="product-desc">Амортизирующая подошва, дышащий верх, размеры 36–47. Подходят для бега и повседневной носки.</p>
+              <div class="product-article">Арт.: CL-002</div>
+              <div class="product-footer">
+                <span class="product-price">5 990 ₽</span>
+                <button class="btn-order" onclick="addToCart(this, 'Кроссовки RunFlex Air')">
+                  <i class="fa-solid fa-cart-plus"></i> Заказать
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Товар 6 -->
+          <div class="product-card" data-category="home" data-name="Кофемашина BrewMaster 3000" data-article="HM-001">
+            <div class="product-img-wrap">
+              <div class="product-img-placeholder">
+                <i class="fa-solid fa-mug-hot"></i>
+              </div>
+            </div>
+            <div class="product-info">
+              <span class="product-category">Дом и быт</span>
+              <h3 class="product-name">Кофемашина BrewMaster 3000</h3>
+              <p class="product-desc">15 бар, встроенная кофемолка, капучинатор, резервуар 1.8 л. Профессиональный кофе у вас дома.</p>
+              <div class="product-article">Арт.: HM-001</div>
+              <div class="product-footer">
+                <span class="product-price">24 990 ₽</span>
+                <button class="btn-order" onclick="addToCart(this, 'Кофемашина BrewMaster 3000')">
+                  <i class="fa-solid fa-cart-plus"></i> Заказать
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Товар 7 -->
+          <div class="product-card" data-category="home" data-name="Пылесос SmartClean 2000" data-article="HM-002">
+            <div class="product-img-wrap">
+              <div class="product-img-placeholder">
+                <i class="fa-solid fa-wind"></i>
+              </div>
+              <span class="product-badge badge-sale">Скидка</span>
+            </div>
+            <div class="product-info">
+              <span class="product-category">Дом и быт</span>
+              <h3 class="product-name">Пылесос SmartClean 2000</h3>
+              <p class="product-desc">Мощность 2200 Вт, HEPA-фильтр, беспроводной, 60 мин работы. Эффективная уборка без лишних усилий.</p>
+              <div class="product-article">Арт.: HM-002</div>
+              <div class="product-footer">
+                <span class="product-price">18 490 ₽</span>
+                <button class="btn-order" onclick="addToCart(this, 'Пылесос SmartClean 2000')">
+                  <i class="fa-solid fa-cart-plus"></i> Заказать
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Товар 8 -->
+          <div class="product-card" data-category="sport" data-name="Велосипед SpeedRide 26" data-article="SP-001">
+            <div class="product-img-wrap">
+              <div class="product-img-placeholder">
+                <i class="fa-solid fa-bicycle"></i>
+              </div>
+            </div>
+            <div class="product-info">
+              <span class="product-category">Спорт</span>
+              <h3 class="product-name">Велосипед SpeedRide 26</h3>
+              <p class="product-desc">Алюминиевая рама, 21 скорость, гидравлические тормоза, колёса 26". Для города и лёгкого бездорожья.</p>
+              <div class="product-article">Арт.: SP-001</div>
+              <div class="product-footer">
+                <span class="product-price">32 990 ₽</span>
+                <button class="btn-order" onclick="addToCart(this, 'Велосипед SpeedRide 26')">
+                  <i class="fa-solid fa-cart-plus"></i> Заказать
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /catalog-grid -->
+      </section>
+
+    </main>
+
+    <!-- ===================== ВКЛАДКА: МОИ ЗАКАЗЫ ===================== -->
+    <main id="tab-orders" class="tab-content">
+      <div class="page-header">
+        <h2><i class="fa-solid fa-box"></i> Мои заказы</h2>
+        <p>Список ваших активных и завершённых заказов</p>
+      </div>
+      <div class="orders-stats">
+        <div class="stat-card">
+          <i class="fa-solid fa-clock stat-icon"></i>
+          <div>
+            <div class="stat-value" id="stat-ready">0</div>
+            <div class="stat-label">Ожидают выдачи</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <i class="fa-solid fa-truck stat-icon"></i>
+          <div>
+            <div class="stat-value" id="stat-transit">0</div>
+            <div class="stat-label">В пути</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <i class="fa-solid fa-circle-check stat-icon"></i>
+          <div>
+            <div class="stat-value" id="stat-done">0</div>
+            <div class="stat-label">Выдано</div>
+          </div>
+        </div>
+      </div>
+      <div class="orders-table-wrap">
+        <table class="orders-table">
+          <thead>
+            <tr>
+              <th>№ заказа</th>
+              <th>Товары</th>
+              <th>Дата поступления</th>
+              <th>Статус</th>
+              <th>Итого</th>
+            </tr>
+          </thead>
+          <tbody id="orders-tbody"></tbody>
+        </table>
+      </div>
+    </main>
+
+    <!-- ===================== ВКЛАДКА: ЛИЧНЫЙ КАБИНЕТ ===================== -->
+    <main id="tab-profile" class="tab-content">
+      <div class="page-header">
+        <h2><i class="fa-solid fa-user-circle"></i> Личный кабинет</h2>
+        <p>Управление профилем и настройками уведомлений</p>
+      </div>
+
+      <div class="profile-layout">
+
+        <!-- Карточка профиля -->
+        <!-- Карточка профиля -->
+        <div class="profile-card">
+          <div class="profile-avatar">
+            <i class="fa-solid fa-user-tie"></i>
+          </div>
+          <h3 id="profile-name">—</h3>
+          <p class="profile-role">Клиент ПВЗ</p>
+          <div class="profile-meta">
+            <div class="meta-item">
+              <i class="fa-solid fa-envelope"></i>
+              <span id="profile-email">—</span>
+            </div>
+            <div class="meta-item">
+              <i class="fa-solid fa-phone"></i>
+              <span id="profile-phone">—</span>
+            </div>
+            <div class="meta-item">
+              <i class="fa-brands fa-telegram"></i>
+              <span id="profile-max">—</span>
+            </div>
+          </div>
+          <button class="btn-primary btn-edit-profile" onclick="toggleEditProfile()">
+            <i class="fa-solid fa-pen"></i> Редактировать
+          </button>
+        </div>
+
+        <!-- Правая колонка -->
+        <div class="profile-details">
+
+          <!-- Редактирование профиля -->
+          <div class="profile-section" id="edit-profile-section" style="display:none;">
+            <h4><i class="fa-solid fa-pen-to-square"></i> Редактирование профиля</h4>
+            <div class="edit-form">
+              <div class="form-group">
+                <label>Фамилия</label>
+                <input type="text" id="edit-lastname" placeholder="Иванов" />
+              </div>
+              <div class="form-group">
+                <label>Имя</label>
+                <input type="text" id="edit-firstname" placeholder="Александр" />
+              </div>
+              <div class="form-group">
+                <label>Отчество</label>
+                <input type="text" id="edit-middlename" placeholder="Иванович" />
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="edit-email" placeholder="example@mail.ru" />
+              </div>
+              <div class="form-group">
+                <label>Телефон</label>
+                <input type="tel" id="edit-phone" placeholder="+7 (___) ___-__-__" />
+              </div>
+              <div class="form-group">
+                <label>ID в мессенджере MAX (@логин)</label>
+                <input type="text" id="edit-max" placeholder="@username" />
+              </div>
+              <div class="form-actions">
+                <button class="btn-primary" onclick="saveProfile()">
+                  <i class="fa-solid fa-floppy-disk"></i> Сохранить
+                </button>
+                <button class="btn-outline" onclick="toggleEditProfile()">Отмена</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Смена пароля -->
+          <div class="profile-section">
+            <h4><i class="fa-solid fa-key"></i> Смена пароля</h4>
+            <div class="edit-form">
+              <div class="form-group">
+                <label>Текущий пароль</label>
+                <div class="password-wrapper">
+                  <input type="password" id="cur-pass" placeholder="Введите текущий пароль" />
+                  <button type="button" class="toggle-password" onclick="togglePassField('cur-pass', 'eye-cur')">
+                    <i class="fa-solid fa-eye" id="eye-cur"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Новый пароль</label>
+                <div class="password-wrapper">
+                  <input type="password" id="new-pass" placeholder="Введите новый пароль" />
+                  <button type="button" class="toggle-password" onclick="togglePassField('new-pass', 'eye-new')">
+                    <i class="fa-solid fa-eye" id="eye-new"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Подтвердите новый пароль</label>
+                <div class="password-wrapper">
+                  <input type="password" id="conf-pass" placeholder="Повторите новый пароль" />
+                  <button type="button" class="toggle-password" onclick="togglePassField('conf-pass', 'eye-conf')">
+                    <i class="fa-solid fa-eye" id="eye-conf"></i>
+                  </button>
+                </div>
+              </div>
+              <div id="pass-error" class="auth-error hidden" style="margin-bottom:12px;">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span id="pass-error-text"></span>
+              </div>
+              <div class="form-actions">
+                <button class="btn-primary" onclick="changePassword()">
+                  <i class="fa-solid fa-shield-halved"></i> Обновить пароль
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Уведомления -->
+          <div class="profile-section">
+            <h4><i class="fa-solid fa-bell"></i> Настройки уведомлений</h4>
+            <div class="notifications-list">
+              <label class="toggle-row">
+                <span>Уведомления в мессенджере MAX</span>
+                <input type="checkbox" checked class="toggle-input" />
+                <span class="toggle-slider"></span>
+              </label>
+              <label class="toggle-row">
+                <span>Уведомления по Email</span>
+                <input type="checkbox" checked class="toggle-input" />
+                <span class="toggle-slider"></span>
+              </label>
+              <label class="toggle-row">
+                <span>SMS-уведомления</span>
+                <input type="checkbox" class="toggle-input" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+        </div><!-- /profile-details -->
+      </div><!-- /profile-layout -->
+    </main>
+
+  </div><!-- /app-screen -->
+
+  <!-- ===================== УВЕДОМЛЕНИЕ (TOAST) ===================== -->
+  <div id="toast" class="toast hidden">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="toast-msg">Сохранено</span>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
